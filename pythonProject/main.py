@@ -37,29 +37,27 @@ def dataPrepairing():
     values = dataframe["Label"].value_counts() # Ở cột Label trong dataframe, in ra chuỗi chứa số lượng các giá trị duy nhất
     Ratio_of_spamEmail = (values[0]/(values[0] + values[1])) * 100
     Ratio_of_hamEmail = (values[1]/(values[0] + values[1])) * 100
-    print(f"Ham email: {Ratio_of_hamEmail}%")
-    print(f"Spam email: {Ratio_of_spamEmail}%")
+    print(f"Ham email: {round(Ratio_of_hamEmail, 2)}%")
+    print(f"Spam email: {round(Ratio_of_spamEmail, 2)}%")
         # plt.subplot(Total number of rows, Total number of columns, plot number)
-    ListOfHam = dataframe[dataframe["Label"] == 1]["length"].tolist()
-    ListOfSpam = dataframe[dataframe["Label"] == 0]["length"].tolist()
-    minLenHam, minLenSpam = min(np.arange(0, len(ListOfHam)+1000)), min(np.arange(0, len(ListOfSpam)+1000))
-    maxLenHam, maxLenSpam = max(np.arange(0, len(ListOfHam)+1000)), max(np.arange(0, len(ListOfSpam)+1000))
-    plt.subplot(2, 2, 1)
-    plt.hist(dataframe[dataframe["Label"] == 1]["length"], color="blue", alpha=0.7, bins=100)
-    plt.subplot(2, 2, 2)
+    lIst = dataframe[dataframe["Label"] == 1]["length"]
+    plt.subplot(2, 1, 1)
+    plt.figure(figsize=(16, 8))
+    plt.hist(lIst, color="blue", alpha=0.7, bins=100)
     plt.hist(dataframe[dataframe["Label"] == 0]["length"], color="red", alpha=0.7, bins = 100)
-    plt.subplot(2, 2, 3)
-    plt.pie(values,labels=[f"{np.floor(Ratio_of_hamEmail)}%", f"{np.ceil(Ratio_of_spamEmail)}%"])  # Vẽ đồ thị hình tròn
+    plt.xlabel("Lines")
+    plt.ylabel("Number of words in dataframe per line")
+    plt.subplot(2, 1, 2)
+    plt.pie(values,labels=[f"{round(Ratio_of_hamEmail, 2)}%", f"{round(Ratio_of_spamEmail, 2)}%"])  # Vẽ đồ thị hình tròn
     # plt.legend(["Valid Email", "Spam Email"], loc="upper left") # Thêm chú giải vào góc trên bên trái
-    # plt.show() # In đồ thị ra màn hình
-
+    plt.show() # In đồ thị ra màn hình
     return dataframe
 
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.model_selection import train_test_split
 def Pretreatment(dataframe):
     cv = CountVectorizer()
-    X_dataframeTransform = cv.fit_transform(dataframe["EmailText"])
+    features = cv.fit_transform(dataframe["EmailText"])
     """
     Thực hiện chuyển đổi dữ liệu văn bản từ cột 'EmailText' trong dataframe thành dạng vector sử dụng CountVectorizer. 
     Kết quả của quá trình chuyển đổi được lưu trữ trong biến X_dataframeTransform.
@@ -68,15 +66,20 @@ def Pretreatment(dataframe):
     - Quy trình hoạt động của CountVertorizer.fit_transform:
       --> link: https://stackoverflow.com/questions/47898326/how-vectorizer-fit-transform-work-in-sklearn
     """
-    X = X_dataframeTransform.toarray()
-
+    # print(features])
+    X = features.toarray()
+    # print(X)
     y = dataframe["Label"]
     # Extract and separation data
     X_train, X_test, y_train, y_test  = train_test_split(X,y, train_size= 0.8)
-    print(f"X_train = {X_train.shape}") # trả về 1 tuple kích thước của ma trận X_train. Với 4457 là số hàng, 8679 là số cột
-    print(f"X_test = {X_test.shape}")
-    print(f"y_train = {y_train.shape}")
-    print(f"y_test = {y_test.shape}")
+    print()
+    word = cv.get_feature_names_out()
+    print(word)  # in ra từ điển từ được tạo bởi phương thức CountVectorizer(), tất cả 8678 từ (8678 collumns)
+    print(f"X_train = {X_train.shape}, datatype: {type(X_train)}") # trả về 1 tuple kích thước của ma trận X_train. Với 4457 là số hàng, 8679 là số cột
+    print(f"X_test = {X_test.shape}, datatype: {type(X_test)}")
+    print(f"y_train = {y_train.shape}, datatype: {type(y_train)}")
+    print(f"y_test = {y_test.shape}, datatype: {type(y_test)}")
+    print()
     """
     
     """
@@ -91,6 +94,14 @@ class CustomMultinomialNB:
     """
     def __init__(self, alpha=1):
         self.alpha = alpha
+        """
+        - alpha: smoothing parameter. Tham số này rất quan trọng trong tính toán, nếu không có nó, thuật toán rất có thể sẽ sai
+        - Ví dụ: trường hợp 1 đội bóng A phải đá 9 trận đấu, 8 trận trước họ đều thua, tính xác suất để trận cuối thắng, nếu không
+        có thông số alpha để làm chuẩn xác xác suất, thì với cách tính xác suất: P(win) =  win/(lost+win) = 0/(8+0) = 0, khả năng
+        họ thắng sẽ là 0 --> ko đúng, xác suất thắng phải có (bất kể nhỏ hay lớn), từ đó thông số alpha (còn được gọi là laplace smoothing)
+        được sinh ra, bằng việc sử dụng công thức mới P(win) = (win+alpha)/{(lost+alpha) + (win +alpha)} = (0+1)/{(8+1)+(0+1)} = 1/10 --> độ chính xác đã cao hơn
+        - Nếu muốn hiểu rõ hơn thì xem cái này đi, một anh Ấn Độ râu quai nón sẽ giảng đầy đủ cho bm (.) 8' --> https://www.youtube.com/watch?v=IhJlLTHzPXQ&t=42s
+        """
 
     def fit(self, X, y): # X = X_train, y= y_train tương ứng
         self.X = X
@@ -101,12 +112,30 @@ class CustomMultinomialNB:
             print(f"c in this loop = {c}, type: {type(c)}")
             X_c = X[np.where(y == c)]
             self.parameters[f"phi_{str(c)}"] = len(X_c) / len(X)
+            print(self.parameters[f"phi_{str(c)}"])
+            print(len(X_c))
             """
-            phi_{str(c)}: xác suất tiên nghiệm của một lớp (trong pj này, là 2 lớp [0 1] tương ứng với 2 lớp ["spam", "hám"])
-            len(X_c): số lượng của mỗi lớp xuất hiện trong dataframe 
-            len(X): tổng số lượng tất cả các lớp xuất hiện trong dataframe
+            phi_str(c): xác suất tiên nghiệm của một lớp (trong pj này, là 2 lớp [0 1] tương ứng với 2 lớp ["spam", "ham"])
+            --> nói theo ngôn ngữ loài người, là tỉ lệ sủa spam/(spam+ham) và ham/(spam+ham)
+                len(X_c): số lượng của mỗi lớp xuất hiện trong dataframe 
+            --> nói theo ngôn ngữ loài người, là tổng số dòng có label "spam" và tổng số dòng có label "ham" trong 80% dataframe (bài này lấy 80% dataframe để training)
+                len(X): tổng số lượng tất cả các lớp xuất hiện trong dataframe
+            --> nói theo ngôn ngữ loài người, là tổng số dòng của 80% dataframe, hay chính là len("sum") + len("ham")
             """
-            self.parameters["theta_" + str(c)] = (X_c.sum(axis=0) + self.alpha) / (np.sum(X_c.sum(axis=0) + self.alpha))
+            self.parameters[f"theta_{str(c)}"] = (X_c.sum(axis=0) + self.alpha) / (np.sum(X_c.sum(axis=0)  + self.alpha))
+            # print(np.sum(X_c.sum(axis=0)))
+            """
+            theta_str(c): Xác xuất 
+            X_c.sum(axis=0): tổng số lần xuất hiện của từng đặc trưng trong lớp c ("spam" và "ham")
+            --> nói theo ngôn ngữ loài người: tổng số lần xuất hiện của 1 từ nào đó trong lớp tương ứng
+                (np.sum(X_c.sum(axis=0)
+            np.sum(X_c.sum(axis=0): tính tổng số lần xuất hiện của tất cả các tính năng trong tập dữ liệu X_c, không dùng len(X_c)
+            như công thức trên vì len(X_c) không tính tới việc một tính năng có thể xuất hiện nhiều lần trong một điểm dữ liệu
+            * Lưu ý: "một điểm dữ liệu" tức là 1 hàng trong dataframe (hay còn là 1 email trong file spam.csv) 
+                     "một đặc trưng" tức là một từ trong dataframe
+                     "một lớp" tức là một label trong dataframe (ở bài này cụ thể là 2 label "spam", "ham" lần lượt là [0, 1])
+                     "self.alpha": tăng độ chính xác cho thuật toán (thử bỏ tham số alpha đi, độ chính xác từ 98% sẽ tụt về 13% ngay)
+            """
 
     def predict(self, X):
         predictions = []
@@ -120,7 +149,6 @@ class CustomMultinomialNB:
         return predictions
 
 
-from sklearn.metrics import classification_report
 def trainModel(X_train, X_test, y_train, y_test):
     print()
 
