@@ -169,12 +169,19 @@ class CustomMultinomialNB:
         predictions = []
         for x in X:
             phi_list = []
-            for _, c in enumerate(self.classes):
+            for _, c in enumerate(self.classes): # yêu cầu chương trình lặp lần lượt mỗi label (có 2 lần lặp, lần 1 tương ứng với c = 0, lần 2 c = 1, với 0,1 là spam,ham)
                 phi = np.log(self.parameters["phi_" + str(c)])
                 theta = np.sum(np.log(self.parameters["theta_" + str(c)]) * x)
                 phi_list.append(phi + theta)
             predictions.append(self.classes[np.argmax(phi_list)])
         return predictions
+    """
+    x (x in X): x đại diện cho từng dòng trong dataframe (phần dc dùng để test - 20%) được chuẩn hoá dưới dạng ma trận dày --> lệnh for x in X cho chương trình lặp
+    lần lượt qua mỗi dòng trong dataframe 
+    phi: giá trị logarit của phi_0 và phi_1 (phi_0 và phi_1 chính là tỉ lệ của spam trong dataframe và ham trong dataframe --> tính ở phương thức fit bên trên)
+    
+    
+    """
 
 
 def trainModel(X_train, X_test, y_train, y_test):
