@@ -50,7 +50,7 @@ def dataPrepairing():
     plt.subplot(2, 1, 2)
     plt.pie(values,labels=[f"{round(Ratio_of_hamEmail, 2)}%", f"{round(Ratio_of_spamEmail, 2)}%"])  # Vẽ đồ thị hình tròn
     # plt.legend(["Valid Email", "Spam Email"], loc="upper left") # Thêm chú giải vào góc trên bên trái
-    plt.show() # In đồ thị ra màn hình
+    # plt.show() # In đồ thị ra màn hình
     return dataframe
 
 from sklearn.feature_extraction.text import CountVectorizer
@@ -65,9 +65,36 @@ def Pretreatment(dataframe):
       --> link: https://phamdinhkhanh.github.io/deepai-book/ch_ml/FeatureEngineering.html
     - Quy trình hoạt động của CountVertorizer.fit_transform:
       --> link: https://stackoverflow.com/questions/47898326/how-vectorizer-fit-transform-work-in-sklearn
+    - features lưu trữ dòng của dataframe dưới dạng ma trận thưa, Ví dụ trực tiếp với dòng 1 (dòng đầu tiên của dataframe không tính title): 
+  (0, 3558)	1 ---> từ này nằm ở cột 3558 trong từ điển được tạo bởi hàm CountVectorizer(), số 0 đại diện cho dòng bao nhiêu trong features
+  (0, 8046)	1
+  (0, 4359)	1
+  (0, 5932)	1
+  (0, 2332)	1
+  (0, 1304)	1
+  (0, 5549)	1
+  (0, 4096)	1
+  (0, 1754)	1
+  (0, 3642)	1
+  (0, 8509)	1
+  (0, 4485)	1
+  (0, 1752)	1
+  (0, 2053)	1
+  (0, 7661)	1
+  (0, 3602)	1
+  (0, 1070)	1
+  (0, 8285)	1
     """
-    # print(features])
+    print(features)
     X = features.toarray()
+    """
+    Bởi vì features là một ma trận thưa, mà thuật toán Naives Bayes lại nhận đầu vào là một ma trận dày, nên phải dùng phương thức toarray()
+    để chuyển đổi X về một ma trận dày, khi này, kể cả những chứ cái không xuất hiện trong mỗi dòng cx sẽ được đánh số lần xuất hiện là 0.
+    Ví dụ trực tiếp với dòng đầu tiên của X:
+    [0 0 0 ... 0 0 0]: nó hiện như này vì ở cột 1,2,3 và 3 cột cuối của dòng không hề xuất hiện từ nào trong từ điển, nếu sử dụng công cụ 
+    debug để xem matrix(X), ta chỉ cần kéo tới những cột 3558, 8046,4359,... tương ứng thì sẽ thấy chỉ số là 1 (vì những từ này xuất hiện trong
+    từ điển, những từ khác không có nên mới có chỉ số là 0)    
+    """
     # print(X)
     y = dataframe["Label"]
     # Extract and separation data
@@ -125,7 +152,8 @@ class CustomMultinomialNB:
             self.parameters[f"theta_{str(c)}"] = (X_c.sum(axis=0) + self.alpha) / (np.sum(X_c.sum(axis=0)  + self.alpha))
             # print(np.sum(X_c.sum(axis=0)))
             """
-            theta_str(c): Xác xuất 
+            theta_str(c): Xác xuất mỗi đặc trưng xuất hiện trong lớp c
+            ---> nói theo ngôn ngữ loài người là xác suất xuất hiện của từng chữ cái trong spam và ham
             X_c.sum(axis=0): tổng số lần xuất hiện của từng đặc trưng trong lớp c ("spam" và "ham")
             --> nói theo ngôn ngữ loài người: tổng số lần xuất hiện của 1 từ nào đó trong lớp tương ứng
                 (np.sum(X_c.sum(axis=0)
